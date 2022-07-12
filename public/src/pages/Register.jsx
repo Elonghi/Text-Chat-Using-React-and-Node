@@ -1,8 +1,11 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { ToastContainer, toast} from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css"
+import axios from 'axios';
+import { RegisterRoute } from '../utils/apiRoutes';
+import { Navigate } from 'react-router-dom';
 
 function Register() {
     const [values, setValues] = useState({
@@ -12,70 +15,99 @@ function Register() {
         confirmPassword: "",
     })
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
-        handleValidation();
-    }
+        if (handleValidation()) {
+            const { password, username, email } = values;
+            const { data } = await axios.post(RegisterRoute, {
+                password,
+                username,
+                email
+            });
 
-    const toastOptions = {
-        position: 'bottom-right',
-        autoClose: 8000,
-        pauseOnHover: true,
-        draggable: true,
-        theme: "dark",
-    }
+            if (data.status===false) {
+                toast.error(data.msg, toastOptions);
+            }
 
-    const handleValidation = () => {
-        const { password, confirmPassword, username, email } = values;
-
-        if ( password !== confirmPassword) {
-            toast.error(" Your password not same equals.", toastOptions);
+            if (data.status === true) {
+                localStorage.setItem('chat-app-user', JSON.stringify(data.user))
+                //Navigate("/")
+            }
         }
+    };
+
+const toastOptions = {
+    position: 'bottom-right',
+    autoClose: 8000,
+    pauseOnHover: true,
+    draggable: true,
+    theme: "dark",
+}
+
+const handleValidation = () => {
+    const { password, confirmPassword, username, email } = values;
+
+    if (password !== confirmPassword) {
+        toast.error(" Suas senhas não conferem.", toastOptions);
         return false;
     }
-
-    const handleChange = (e) => {
-        setValues({ ...values, [e.target.name]: e.target.value })
+    if (username.length < 3) {
+        toast.error(" Seu usuario precisa ter mais que 3 caracteres. ", toastOptions);
+        return false;
     }
+    if (password.length < 8) {
+        toast.error(" Sua senha precisa ter mais que 8 caracteres. ", toastOptions);
+        return false;
+    }
+    if (email === "") {
+        toast.error(" Seu email não pode estar vazio. ", toastOptions);
+        return false;
+    }
+    return true;
+}
 
-    return (
-        <>
-            <FormContainer>
-                <form onSubmit={(event) => handleSubmit(event)}>
-                    <div className="brand">
-                        <img src="" alt="" />
-                        <h1>Chatzada</h1>
-                    </div>
-                    <input type="text"
-                        placeholder="Username"
-                        name="username"
-                        onChange={(e) => handleChange(e)}
-                    />
-                    <input type="email"
-                        placeholder="Email"
-                        name="email"
-                        onChange={(e) => handleChange(e)}
-                    />
-                    <input type="password"
-                        placeholder="Password"
-                        name="password"
-                        onChange={(e) => handleChange(e)}
-                    />
-                    <input type="password"
-                        placeholder="Confirm Password"
-                        name="confirmPassword"
-                        onChange={(e) => handleChange(e)}
-                    />
+const handleChange = (e) => {
+    setValues({ ...values, [e.target.name]: e.target.value })
+}
 
-                    <button type="Submit">Create User</button>
-                    <span>
-                        Already have an account ? <Link to="/login"> Login </Link>
-                    </span>
-                </form>
-            </FormContainer>
-            <ToastContainer />
-        </>
-    )
+return (
+    <>
+        <FormContainer>
+            <form onSubmit={(event) => handleSubmit(event)}>
+                <div className="brand">
+                    <img src="" alt="" />
+                    <h1>Chatzada</h1>
+                </div>
+                <input type="text"
+                    placeholder="Usuario"
+                    name="username"
+                    onChange={(e) => handleChange(e)}
+                />
+                <input type="email"
+                    placeholder="Email"
+                    name="email"
+                    onChange={(e) => handleChange(e)}
+                />
+                <input type="password"
+                    placeholder="Senha"
+                    name="password"
+                    onChange={(e) => handleChange(e)}
+                />
+                <input type="password"
+                    placeholder="Confirme sua Senha"
+                    name="confirmPassword"
+                    onChange={(e) => handleChange(e)}
+                />
+
+                <button type="Submit">Create User</button>
+                <span>
+                    Você já tem uma conta ? <Link to="/login"> Login </Link>
+                </span>
+            </form>
+        </FormContainer>
+        <ToastContainer />
+    </>
+)
 }
 
 const FormContainer = styled.div`
